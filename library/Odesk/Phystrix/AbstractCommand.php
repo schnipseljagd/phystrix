@@ -244,11 +244,12 @@ abstract class AbstractCommand
             $metrics->markSuccess();
             $circuitBreaker->markSuccess();
             $this->recordExecutionEvent(self::EVENT_SUCCESS);
-        } catch (BadRequestException $exception) {
-            // Treated differently and allowed to propagate without any stats tracking or fallback logic
-            $this->recordExecutionTime();
-            throw $exception;
         } catch (Exception $exception) {
+            if (in_array(get_class($exception), $this->config->get('badRequestException', array('\Odesk\Phystrix\Exception\BadRequestException')))) {
+                // Treated differently and allowed to propagate without any stats tracking or fallback logic
+                $this->recordExecutionTime();
+                throw $exception;
+            }
             $this->recordExecutionTime();
             $metrics->markFailure();
             $this->executionException = $exception;
